@@ -21,15 +21,18 @@ public class Main {
             return;
         }
         String input = FileHelper.readFile(inputFile);
-        Task task = createTask(taskNumber);
+        System.out.print("Which part should be performed? ");
+        int partNumber = Integer.parseInt(scanner.nextLine().replaceAll("[^0-9]", ""));
+        Task task = createTask(taskNumber, partNumber);
         String output = task.getResult(input);
-        File outputFile = new File("output/" + taskNumber + ".txt");
+        File outputFile = new File("output/" + taskNumber + "_" + partNumber + ".txt");
         FileHelper.writeFile(outputFile, output);
+        System.out.println(output);
     }
 
-    private static Task createTask(int task) {
+    private static Task createTask(int task, int part) {
         try {
-            Class<?> clazz = Class.forName("net.mcplayhd.adventofcode2022.tasks.Task" + task);
+            Class<?> clazz = Class.forName("net.mcplayhd.adventofcode2022.tasks.task" + task + ".Task" + task + "Part" + part);
             Constructor<?> ctor = clazz.getConstructor();
             return (Task) ctor.newInstance();
         } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException |
