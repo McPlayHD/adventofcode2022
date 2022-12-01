@@ -8,6 +8,10 @@ import java.nio.file.Files;
 
 public class FileHelper {
 
+    public static String[] getLines(File file) throws IOException {
+        return readFile(file).replace("\r\n", "\n").split("\n", -1);
+    }
+
     public static String readFile(File file) throws IOException {
         return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
     }

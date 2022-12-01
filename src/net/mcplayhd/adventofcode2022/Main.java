@@ -12,6 +12,7 @@ import java.util.Scanner;
 public class Main {
 
     public static void main(String[] args) throws IOException {
+        // preparation
         Scanner scanner = new Scanner(System.in);
         System.out.print("Which task should be performed? ");
         int taskNumber = Integer.parseInt(scanner.nextLine().replaceAll("[^0-9]", ""));
@@ -20,12 +21,14 @@ public class Main {
             System.err.println("Input file " + inputFile.getPath() + " not found.");
             return;
         }
-        String input = FileHelper.readFile(inputFile);
         System.out.print("Which part should be performed? ");
         int partNumber = Integer.parseInt(scanner.nextLine().replaceAll("[^0-9]", ""));
+        File outputFile = new File("output/" + taskNumber + "_" + partNumber + ".txt");
+        // performing the task
+        String[] input = FileHelper.getLines(inputFile);
         Task task = createTask(taskNumber, partNumber);
         String output = task.getResult(input);
-        File outputFile = new File("output/" + taskNumber + "_" + partNumber + ".txt");
+        // output
         FileHelper.writeFile(outputFile, output);
         System.out.println(output);
     }
@@ -33,8 +36,8 @@ public class Main {
     private static Task createTask(int task, int part) {
         try {
             Class<?> clazz = Class.forName("net.mcplayhd.adventofcode2022.tasks.task" + task + ".Task" + task + "Part" + part);
-            Constructor<?> ctor = clazz.getConstructor();
-            return (Task) ctor.newInstance();
+            Constructor<?> constructor = clazz.getConstructor();
+            return (Task) constructor.newInstance();
         } catch (InstantiationException | InvocationTargetException | NoSuchMethodException | IllegalAccessException |
                  ClassNotFoundException e) {
             throw new RuntimeException(e);

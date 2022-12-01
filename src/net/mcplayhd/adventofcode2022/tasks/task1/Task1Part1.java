@@ -5,18 +5,17 @@ import net.mcplayhd.adventofcode2022.tasks.Task;
 public class Task1Part1 extends Task {
 
     @Override
-    public String getResult(String input) {
-        String[] lines = input.split("\n", -1);
+    public String getResult(String[] input) {
         int max = 0;
         int current = 0;
-        for (String line : lines) {
-            if ("".equals(line)) {
+        for (String line : input) {
+            if (line.isEmpty()) {
                 max = Math.max(current, max);
                 current = 0;
                 continue;
             }
             current += Integer.parseInt(line);
         }
-        return max + "";
+        return Integer.toString(max);
     }
 }
