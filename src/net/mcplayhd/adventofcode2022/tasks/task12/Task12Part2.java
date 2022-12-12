@@ -94,7 +94,6 @@ public class Task12Part2 extends Task {
         char elevation;
         List<Tile> neighbours = new ArrayList<>();
 
-        Map<Character, Integer> movesAtHeight = new HashMap<>();
         int moves = -1;
 
         public Tile(char elevation) {
