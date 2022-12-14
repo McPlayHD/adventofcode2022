@@ -2,14 +2,22 @@ package net.mcplayhd.adventofcode2022.tasks.task14;
 
 import net.mcplayhd.adventofcode2022.tasks.Task;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+
 public class Task14Part1 extends Task {
     static GridState[][] grid;
+    static int width = 800;
+    static int height = 200;
 
     @Override
     public String getResult(String[] input) {
-        grid = new GridState[200][600];
-        for (int Y = 0; Y < 200; Y++) {
-            for (int X = 0; X < 600; X++) {
+        grid = new GridState[height][width];
+        for (int Y = 0; Y < height; Y++) {
+            for (int X = 0; X < width; X++) {
                 grid[Y][X] = GridState.FREE;
             }
         }
@@ -38,6 +46,18 @@ public class Task14Part1 extends Task {
                 }
                 lastPoint = new Point(x, y);
             }
+        }
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        for (int Y = 0; Y < height; Y++) {
+            for (int X = 0; X < width; X++) {
+                image.setRGB(X, Y, grid[Y][X] == GridState.ROCK ? Color.WHITE.getRGB() : Color.BLACK.getRGB());
+            }
+        }
+        try {
+            File outputfile = new File("cave1.png");
+            ImageIO.write(image, "png", outputfile);
+        } catch (IOException e) {
+            // handle exception
         }
         drawTestGrid();
         int counter = 0;
