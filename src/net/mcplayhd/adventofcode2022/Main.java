@@ -27,7 +27,10 @@ public class Main {
         // performing the task
         String[] input = FileHelper.getLines(inputFile);
         Task task = createTask(taskNumber, partNumber);
+        long start = System.nanoTime();
         String output = task.getResult(input);
+        long nanos = System.nanoTime() - start;
+        System.out.println("Finished after " + (nanos/1000/1000.) + "ms");
         // output
         FileHelper.writeFile(outputFile, output);
         System.out.println(output);
