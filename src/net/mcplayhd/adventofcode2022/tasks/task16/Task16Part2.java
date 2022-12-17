@@ -48,6 +48,7 @@ public class Task16Part2 extends Task {
         }
         // 18s / Million
         AtomicInteger bestTotalFlow = new AtomicInteger(0);
+        long start = System.currentTimeMillis();
         for (int task = 0; task < TASKS; task++) {
             Executors.newSingleThreadExecutor().execute(() -> {
                 try {
@@ -126,7 +127,8 @@ public class Task16Part2 extends Task {
                         int currentBest = bestTotalFlow.get();
                         if (totalFlow > currentBest) {
                             if (bestTotalFlow.compareAndSet(currentBest, totalFlow)) {
-                                System.out.println("Found new best total flow after " + totalAttempts + " attempts.");
+                                long time = System.currentTimeMillis() - start;
+                                System.out.println("Found new best total flow after " + totalAttempts + " attempts. [" + time + "ms]");
                                 System.out.println("New best is: " + totalFlow);
                             }
                         }
