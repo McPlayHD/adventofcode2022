@@ -5,11 +5,12 @@ import net.mcplayhd.adventofcode2022.tasks.Task;
 import java.util.Scanner;
 
 public class Task17Part1 extends Task {
+    private static final boolean DEBUG = false;
     private static final long ROCKS_TO_SPAWN = 2022;
     private static final int WIDTH = 7;
     private static final Vector GRAVITY = new Vector(0, -1);
     private static WindDirection[] windDirections;
-    private static final Piece[] pieces = new Piece[] {
+    private static final Piece[] pieces = new Piece[]{
             new LineHorizontal(),
             new Cross(),
             new LMirrored(),
@@ -29,7 +30,7 @@ public class Task17Part1 extends Task {
             windDirections[index] = chars[index] == '<' ? WindDirection.LEFT : WindDirection.RIGHT;
         }
         // placing ground
-        for (int x = 0; x < WIDTH; x ++) {
+        for (int x = 0; x < WIDTH; x++) {
             field[x][0] = true;
         }
         spawnRocks();
@@ -45,27 +46,34 @@ public class Task17Part1 extends Task {
     }
 
     void spawnRocks() {
-        for (int rock = 0; rock < ROCKS_TO_SPAWN; rock ++) {
+        for (int rock = 0; rock < ROCKS_TO_SPAWN; rock++) {
             Piece piece = pieces[rock % pieces.length];
             Vector pos = new Vector(2, getTallestY() + 4);
             boolean canFall = true;
-            for (; canFall; tick ++) {
-                drawBoard(piece, pos);
+            for (; canFall; tick++) {
+                if (DEBUG) {
+                    System.out.println("Spawning/Falling");
+                    drawBoard(piece, pos);
+                }
                 WindDirection windDirection = windDirections[(int) (tick % windDirections.length)];
-                System.out.println(windDirection);
                 if (!checkForObstacle(pos, piece, windDirection.vector)) {
                     pos.x += windDirection.vector.x;
                 }
-                drawBoard(piece, pos);
+                if (DEBUG) {
+                    System.out.println(windDirection);
+                    drawBoard(piece, pos);
+                }
                 if (checkForObstacle(pos, piece, GRAVITY)) {
                     canFall = false;
                 } else {
                     pos.y += GRAVITY.y;
                 }
             }
-            System.out.println("Placing");
             placePiece(pos, piece);
-            drawBoard(null, null);
+            if (DEBUG) {
+                System.out.println("Placing");
+                drawBoard(null, null);
+            }
         }
     }
 
@@ -74,8 +82,8 @@ public class Task17Part1 extends Task {
     void drawBoard(Piece piece, Vector pos) {
         int maxY = getTallestY() + 10;
         int minY = maxY - 20;
-        for (int y = maxY; y >= minY - 10 && y >= 0; y --) {
-            for (int x = 0; x < WIDTH; x ++) {
+        for (int y = maxY; y >= minY - 10 && y >= 0; y--) {
+            for (int x = 0; x < WIDTH; x++) {
                 char c = field[x][y] ? '#' : '.';
                 if (piece != null) {
                     for (Vector pixel : piece.vectors) {
@@ -92,7 +100,7 @@ public class Task17Part1 extends Task {
             System.out.println();
         }
         scanner.nextLine();
-        for (int i = 0; i < 10; i ++) {
+        for (int i = 0; i < 10; i++) {
             System.out.println();
         }
     }
