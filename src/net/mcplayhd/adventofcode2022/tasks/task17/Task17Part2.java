@@ -5,10 +5,8 @@ import net.mcplayhd.adventofcode2022.tasks.Task;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Scanner;
 
 public class Task17Part2 extends Task {
-    private static final boolean DEBUG = false;
     private static final long ROCKS_TO_SPAWN = 1_000_000_000_000L;
     private static final int WIDTH = 7;
     private static final Vector GRAVITY = new Vector(0, -1);
@@ -24,6 +22,7 @@ public class Task17Part2 extends Task {
     private long tick;
     private final boolean[][] field = new boolean[WIDTH][100_000_000]; // {x,y}
     private final int[] heightmap = new int[WIDTH]; // here I just store the highest piece
+    private long computedYOffset = 0;
 
     private final List<PointOfInterest> interests = new ArrayList<>();
 
@@ -41,8 +40,8 @@ public class Task17Part2 extends Task {
         long start = System.nanoTime();
         spawnRocks();
         long time = System.nanoTime() - start;
-        System.out.println("Falling took " + (time/1000000.) + "ms");
-        return Integer.toString(getTallestY());
+        System.out.println("Falling took " + (time / 1000000.) + "ms");
+        return Long.toString(computedYOffset + getTallestY());
     }
 
     int getTallestY() {
@@ -58,14 +57,46 @@ public class Task17Part2 extends Task {
         for (long rock = 0; rock < ROCKS_TO_SPAWN; rock++) {
             tick = tick % windDirections.length;
             int highestY = getTallestY();
-            if (rock < 10) { // do not try to compare the first few times
+            if (computedYOffset == 0 && rock > 10) { // do not try to compare the first few times or if already computed
                 int tickOffset = (int) tick;
-                int pieceOffset = (int) (rock % pieces.length);
                 int dy = highestY - lastHighestY;
-                PointOfInterest interest = new PointOfInterest(tickOffset, pieceOffset, dy);
+                PointOfInterest interest = new PointOfInterest(tickOffset, rock, dy, heightmap);
                 interests.add(interest);
-                for (int index = 1; index < interests.size() / 2 - 1; index ++) {
-                    // TODO: 17/12/2022 compare
+                for (int startIndex = pieces.length; startIndex < interests.size() / 2 - 1; startIndex += pieces.length) {
+                    // making steps of 5
+                    PointOfInterest pointer = interests.get(interests.size() - 1 - startIndex);
+                    if (pointer.equals(interest)) {
+                        boolean isEqual = true;
+                        for (int index = 0; index < startIndex; index++) {
+                            PointOfInterest point1 = interests.get(interests.size() - 1 - index);
+                            PointOfInterest point2 = interests.get(interests.size() - 1 - startIndex - index);
+                            if (!point1.equals(point2)) {
+                                isEqual = false;
+                                break;
+                            }
+                        }
+                        if (!isEqual) {
+                            continue;
+                        }
+                        System.out.println("Found equal section!!!");
+                        PointOfInterest AStart = interests.get(interests.size() - 1 - startIndex - startIndex);
+                        System.out.println("A: From:" + AStart.piece + " To:" + pointer.piece);
+                        System.out.println("B: From:" + pointer.piece + " To:" + interest.piece);
+                        long deltaPieces = interest.piece - pointer.piece;
+                        long deltaY = interest.currentHeightMap[0] - pointer.currentHeightMap[0];
+                        System.out.println("Pieces in between: " + deltaPieces);
+                        System.out.println("Delta Y: " + deltaY);
+                        for (int x = 1; x < WIDTH; x++) {
+                            int yDiff = interest.currentHeightMap[x] - pointer.currentHeightMap[x];
+                            assert yDiff == deltaY; // just to make sure my algorithm is correct
+                        }
+                        while (rock + deltaPieces < ROCKS_TO_SPAWN) {
+                            rock += deltaPieces;
+                            computedYOffset += deltaY;
+                        }
+                        System.out.println("The Y offset is " + computedYOffset);
+                        break;
+                    }
                 }
             }
             lastHighestY = highestY;
@@ -73,17 +104,9 @@ public class Task17Part2 extends Task {
             Vector pos = new Vector(2, getTallestY() + 4);
             boolean canFall = true;
             for (; canFall; tick++) {
-                if (DEBUG) {
-                    System.out.println("Spawning/Falling");
-                    drawBoard(piece, pos);
-                }
                 WindDirection windDirection = windDirections[(int) (tick % windDirections.length)];
                 if (!checkForObstacle(pos, piece, windDirection.vector)) {
                     pos.x += windDirection.vector.x;
-                }
-                if (DEBUG) {
-                    System.out.println(windDirection);
-                    drawBoard(piece, pos);
                 }
                 if (checkForObstacle(pos, piece, GRAVITY)) {
                     canFall = false;
@@ -92,38 +115,6 @@ public class Task17Part2 extends Task {
                 }
             }
             placePiece(pos, piece);
-            if (DEBUG) {
-                System.out.println("Placing");
-                drawBoard(null, null);
-            }
-        }
-    }
-
-    Scanner scanner = new Scanner(System.in);
-
-    void drawBoard(Piece piece, Vector pos) {
-        int maxY = getTallestY() + 10;
-        int minY = maxY - 20;
-        for (int y = maxY; y >= minY - 10 && y >= 0; y--) {
-            for (int x = 0; x < WIDTH; x++) {
-                char c = field[x][y] ? '#' : '.';
-                if (piece != null) {
-                    for (Vector pixel : piece.vectors) {
-                        int X = pos.x + pixel.x;
-                        int Y = pos.y + pixel.y;
-                        if (x == X && y == Y) {
-                            c = 'o';
-                            break;
-                        }
-                    }
-                }
-                System.out.print(c);
-            }
-            System.out.println();
-        }
-        scanner.nextLine();
-        for (int i = 0; i < 10; i++) {
-            System.out.println();
         }
     }
 
@@ -225,13 +216,16 @@ public class Task17Part2 extends Task {
 
     static class PointOfInterest {
         int windOffset;
-        int pieceOffset;
+        long piece;
         int dyFromLastPiece;
+        int[] currentHeightMap;
 
-        public PointOfInterest(int windOffset, int pieceOffset, int dyFromLastPiece) {
+        public PointOfInterest(int windOffset, long piece, int dyFromLastPiece, int[] heightmap) {
             this.windOffset = windOffset;
-            this.pieceOffset = pieceOffset;
+            this.piece = piece;
             this.dyFromLastPiece = dyFromLastPiece;
+            this.currentHeightMap = new int[heightmap.length];
+            System.arraycopy(heightmap, 0, currentHeightMap, 0, heightmap.length);
         }
 
         @Override
@@ -239,12 +233,12 @@ public class Task17Part2 extends Task {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             PointOfInterest that = (PointOfInterest) o;
-            return windOffset == that.windOffset && pieceOffset == that.pieceOffset && dyFromLastPiece == that.dyFromLastPiece;
+            return windOffset == that.windOffset && dyFromLastPiece == that.dyFromLastPiece;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(windOffset, pieceOffset, dyFromLastPiece);
+            return Objects.hash(windOffset, dyFromLastPiece);
         }
     }
 }
