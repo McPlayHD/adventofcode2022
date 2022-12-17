@@ -2,6 +2,8 @@ package net.mcplayhd.adventofcode2022.tasks.task17;
 
 import net.mcplayhd.adventofcode2022.tasks.Task;
 
+import java.util.Scanner;
+
 public class Task17Part1 extends Task {
     private static final long ROCKS_TO_SPAWN = 2022;
     private static final int WIDTH = 7;
@@ -48,53 +50,49 @@ public class Task17Part1 extends Task {
             Vector pos = new Vector(2 + piece.spawnOffset.x, getTallestY() + 4 + piece.spawnOffset.y);
             boolean canFall = true;
             for (; canFall; tick ++) {
+                drawBoard(piece, pos);
                 WindDirection windDirection = windDirections[(int) (tick % windDirections.length)];
                 System.out.println(windDirection);
                 if (!checkForObstacle(pos, piece, windDirection.vector)) {
                     pos.x += windDirection.vector.x;
                 }
                 drawBoard(piece, pos);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
                 if (checkForObstacle(pos, piece, GRAVITY)) {
                     canFall = false;
                 } else {
                     pos.y += GRAVITY.y;
                 }
-                drawBoard(piece, pos);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
             }
             System.out.println("Placing");
             placePiece(pos, piece);
+            drawBoard(null, null);
         }
     }
 
+    Scanner scanner = new Scanner(System.in);
+
     void drawBoard(Piece piece, Vector pos) {
-        for (int i = 0; i < 10; i ++) {
-            System.out.println();
-        }
         int maxY = getTallestY() + 10;
         int minY = maxY - 20;
         for (int y = maxY; y >= minY - 10 && y >= 0; y --) {
             for (int x = 0; x < WIDTH; x ++) {
                 char c = field[x][y] ? '#' : '.';
-                for (Vector pixel : piece.vectors) {
-                    int X = pos.x + pixel.x;
-                    int Y = pos.y + pixel.y;
-                    if (x == X && y == Y) {
-                        c = 'o';
-                        break;
+                if (piece != null) {
+                    for (Vector pixel : piece.vectors) {
+                        int X = pos.x + pixel.x;
+                        int Y = pos.y + pixel.y;
+                        if (x == X && y == Y) {
+                            c = 'o';
+                            break;
+                        }
                     }
                 }
                 System.out.print(c);
             }
+            System.out.println();
+        }
+        scanner.nextLine();
+        for (int i = 0; i < 10; i ++) {
             System.out.println();
         }
     }
