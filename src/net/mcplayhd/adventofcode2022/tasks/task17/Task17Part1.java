@@ -47,7 +47,7 @@ public class Task17Part1 extends Task {
     void spawnRocks() {
         for (int rock = 0; rock < ROCKS_TO_SPAWN; rock ++) {
             Piece piece = pieces[rock % pieces.length];
-            Vector pos = new Vector(2 + piece.spawnOffset.x, getTallestY() + 4 + piece.spawnOffset.y);
+            Vector pos = new Vector(2, getTallestY() + 4);
             boolean canFall = true;
             for (; canFall; tick ++) {
                 drawBoard(piece, pos);
@@ -138,13 +138,11 @@ public class Task17Part1 extends Task {
     }
 
     static class Piece {
-        Vector spawnOffset;
         Vector[] vectors;
     }
 
     static class LineHorizontal extends Piece {
         public LineHorizontal() {
-            spawnOffset = new Vector(0, 0);
             vectors = new Vector[4];
             vectors[0] = new Vector(0, 0);
             vectors[1] = new Vector(1, 0);
@@ -155,7 +153,6 @@ public class Task17Part1 extends Task {
 
     static class Cross extends Piece {
         public Cross() {
-            spawnOffset = new Vector(1, 0);
             vectors = new Vector[5];
             vectors[0] = new Vector(1, 0);
             vectors[1] = new Vector(0, 1);
@@ -167,7 +164,6 @@ public class Task17Part1 extends Task {
 
     static class LMirrored extends Piece {
         public LMirrored() {
-            spawnOffset = new Vector(0, 0);
             vectors = new Vector[5];
             vectors[0] = new Vector(0, 0);
             vectors[1] = new Vector(1, 0);
@@ -179,7 +175,6 @@ public class Task17Part1 extends Task {
 
     static class LineVertical extends Piece {
         public LineVertical() {
-            spawnOffset = new Vector(0, 0);
             vectors = new Vector[4];
             vectors[0] = new Vector(0, 0);
             vectors[1] = new Vector(0, 1);
@@ -190,7 +185,6 @@ public class Task17Part1 extends Task {
 
     static class Block extends Piece {
         public Block() {
-            spawnOffset = new Vector(0, 0);
             vectors = new Vector[4];
             vectors[0] = new Vector(0, 0);
             vectors[1] = new Vector(0, 1);
