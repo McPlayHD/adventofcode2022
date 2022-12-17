@@ -33,7 +33,10 @@ public class Task17Part1 extends Task {
         for (int x = 0; x < WIDTH; x++) {
             field[x][0] = true;
         }
+        long start = System.nanoTime();
         spawnRocks();
+        long time = System.nanoTime() - start;
+        System.out.println("Falling took " + (time/1000000.) + "ms");
         return Integer.toString(getTallestY());
     }
 
