@@ -90,7 +90,22 @@ public class Task19Part2 extends Task {
             }
             // if we reached the time limit, we can't get better results.
             if (currentMinute == MAX_MINUTES) {
+                if (blueprint.bestFinishSoFar == null || getGeodesCount() > blueprint.bestFinishSoFar.getGeodesCount()) {
+                    blueprint.bestFinishSoFar = this;
+                }
                 return this;
+            }
+            // educated guess
+            if (blueprint.bestFinishSoFar != null) {
+                int minutesLeft = MAX_MINUTES - currentMinute;
+                int currentProjection = haveRocks.getOrDefault(Rock.GEODE, 0) + haveRobots.getOrDefault(Rock.GEODE, 0) * minutesLeft;
+                int maxPossibleGeodesToComeAdditionally = minutesLeft * (minutesLeft + 1) / 2; // fancy maths I learned somewhere in my analysis lectures
+                int totalAtTheEnd = currentProjection + maxPossibleGeodesToComeAdditionally;
+                if (totalAtTheEnd < blueprint.bestFinishSoFar.getGeodesCount()) {
+                    // throw that garbage into the bin
+                    haveRocks.put(Rock.GEODE, -1); // making sure it gets thrown away asap
+                    return this;
+                }
             }
             // check if DP table of blueprint contains the current state
             String dpKey = getDPKey();
@@ -100,15 +115,17 @@ public class Task19Part2 extends Task {
             }
             Set<DiggingSimulationStep> allPossible = new HashSet<>();
             // buy new things if possible
-            for (Robot robot : blueprint.store) {
+            for (Robot robot : blueprint.store.values()) {
                 if (shouldBuy(robot) && canBuy(robot)) {
                     DiggingSimulationStep bestWhenBuyingThis = clone().dp(robot);
                     allPossible.add(bestWhenBuyingThis);
                 }
             }
             // maybe it's better not to buy.
-            DiggingSimulationStep ifIContinueWithoutBuying = dp(null);
-            allPossible.add(ifIContinueWithoutBuying);
+            if (shouldNotBuy()) {
+                DiggingSimulationStep ifIContinueWithoutBuying = dp(null);
+                allPossible.add(ifIContinueWithoutBuying);
+            }
             // get the best result.
             DiggingSimulationStep best = null;
             for (DiggingSimulationStep all : allPossible) {
@@ -138,6 +155,15 @@ public class Task19Part2 extends Task {
             return haveRobots.getOrDefault(robot.collects, 0) < max;
         }
 
+        boolean shouldNotBuy() {
+            for (Cost cost : blueprint.store.get(Rock.GEODE).costs) {
+                if (haveRobots.getOrDefault(cost.currency, 0) < cost.amount) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         @Override
         public String toString() {
             return new Gson().toJson(this);
@@ -160,16 +186,18 @@ public class Task19Part2 extends Task {
 
     static class Blueprint {
         int id;
-        Set<Robot> store = new HashSet<>();
+        Map<Rock, Robot> store = new HashMap<>();
         Map<String, DiggingSimulationStep> DP = new HashMap<>();
         Map<Rock, Integer> maxCosts = new HashMap<>();
+
+        DiggingSimulationStep bestFinishSoFar = null;
 
         public Blueprint(int id) {
             this.id = id;
         }
 
         void addToStore(Robot robot) {
-            store.add(robot);
+            store.put(robot.collects, robot);
             for (Cost cost : robot.costs) {
                 maxCosts.merge(cost.currency, cost.amount, Integer::max);
             }
