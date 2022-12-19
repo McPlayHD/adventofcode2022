@@ -49,7 +49,6 @@ public class Task19Part1 extends Task {
         int currentMinute;
         Map<Rock, Integer> haveRobots = new HashMap<>();
         Map<Rock, Integer> haveRocks = new HashMap<>();
-        Robot inProduction = null;
 
         public DiggingSimulationStep(Blueprint blueprint) {
             this.blueprint = blueprint;
@@ -63,13 +62,19 @@ public class Task19Part1 extends Task {
             String key = currentMinute + ":";
             for (Rock rock : Rock.values()) {
                 int available = haveRocks.getOrDefault(rock, 0);
-                int robots = haveRocks.getOrDefault(rock, 0);
+                int robots = haveRobots.getOrDefault(rock, 0);
                 key += available + "," + robots + ":";
             }
             return key;
         }
 
-        DiggingSimulationStep dp() {
+        DiggingSimulationStep dp(Robot toPurchase) {
+            // if we want to purchase something we have to pay for it
+            if (toPurchase != null) {
+                for (Cost cost : toPurchase.costs) {
+                    haveRocks.merge(cost.currency, -cost.amount, Integer::sum);
+                }
+            }
             // gather resources.
             for (Map.Entry<Rock, Integer> robot : haveRobots.entrySet()) {
                 haveRocks.merge(robot.getKey(), robot.getValue(), Integer::sum);
@@ -77,9 +82,8 @@ public class Task19Part1 extends Task {
             // this took exactly one minute of time.
             currentMinute++;
             // if we ordered a robot it will now arrive.
-            if (inProduction != null) {
-                haveRobots.merge(inProduction.collects, 1, Integer::sum);
-                inProduction = null;
+            if (toPurchase != null) {
+                haveRobots.merge(toPurchase.collects, 1, Integer::sum);
             }
             // if we reached the time limit, we can't get better results.
             if (currentMinute == MAX_MINUTES) {
@@ -95,16 +99,14 @@ public class Task19Part1 extends Task {
             // buy new things if possible
             for (Robot robot : blueprint.store) {
                 if (shouldBuy(robot) && canBuy(robot)) {
-                    DiggingSimulationStep clone = this.clone();
-                    clone.order(robot);
-                    DiggingSimulationStep bestWhenBuyingThis = clone.dp();
+                    DiggingSimulationStep bestWhenBuyingThis = clone().dp(robot);
                     allPossible.add(bestWhenBuyingThis);
                 }
             }
-            // maybe it's better not to buy (I don't know)
-            DiggingSimulationStep ifIContinueWithoutBuying = this.clone().dp();
+            // maybe it's better not to buy.
+            DiggingSimulationStep ifIContinueWithoutBuying = dp(null);
             allPossible.add(ifIContinueWithoutBuying);
-            // get the best simulation.
+            // get the best result.
             DiggingSimulationStep best = null;
             for (DiggingSimulationStep all : allPossible) {
                 if (best == null || best.getQualityLevel() < all.getQualityLevel()) {
@@ -133,13 +135,6 @@ public class Task19Part1 extends Task {
             return haveRobots.getOrDefault(robot.collects, 0) < max;
         }
 
-        void order(Robot robot) {
-            for (Cost cost : robot.costs) {
-                haveRocks.merge(cost.currency, -cost.amount, Integer::sum);
-            }
-            inProduction = robot;
-        }
-
         @Override
         public String toString() {
             return new Gson().toJson(this);
@@ -153,7 +148,6 @@ public class Task19Part1 extends Task {
                 clone.currentMinute = currentMinute;
                 clone.haveRobots = new HashMap<>(haveRobots);
                 clone.haveRocks = new HashMap<>(haveRocks);
-                clone.inProduction = inProduction;
                 return clone;
             } catch (CloneNotSupportedException e) {
                 throw new AssertionError();
@@ -179,7 +173,7 @@ public class Task19Part1 extends Task {
         }
 
         int dp(DiggingSimulationStep start) {
-            DiggingSimulationStep best = start.dp();
+            DiggingSimulationStep best = start.dp(null);
             System.out.println(best);
             return best.getQualityLevel();
         }
