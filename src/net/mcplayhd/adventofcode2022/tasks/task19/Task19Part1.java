@@ -45,8 +45,7 @@ public class Task19Part1 extends Task {
     }
 
     static class DiggingSimulationStep implements Cloneable {
-        int depth = 0;
-        Blueprint blueprint;
+        transient Blueprint blueprint;
         int currentMinute;
         Map<Rock, Integer> haveRobots = new HashMap<>();
         Map<Rock, Integer> haveRocks = new HashMap<>();
@@ -145,7 +144,6 @@ public class Task19Part1 extends Task {
         public DiggingSimulationStep clone() {
             try {
                 DiggingSimulationStep clone = (DiggingSimulationStep) super.clone();
-                clone.depth = depth + 1;
                 clone.blueprint = blueprint;
                 clone.currentMinute = currentMinute;
                 clone.haveRobots = new HashMap<>(haveRobots);
@@ -176,6 +174,7 @@ public class Task19Part1 extends Task {
 
         int dp(DiggingSimulationStep start) {
             DiggingSimulationStep best = start.dp();
+            System.out.println(best);
             return best.getQualityLevel();
         }
 
