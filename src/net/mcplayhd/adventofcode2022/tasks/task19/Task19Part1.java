@@ -70,45 +70,50 @@ public class Task19Part1 extends Task {
         }
 
         DiggingSimulationStep dp() {
-            // dig and increase time
+            // gather resources.
             for (Map.Entry<Rock, Integer> robot : haveRobots.entrySet()) {
                 haveRocks.merge(robot.getKey(), robot.getValue(), Integer::sum);
             }
+            // this took exactly one minute of time.
             currentMinute++;
-            if (currentMinute == MAX_MINUTES)
-                // we reached the time limit so returning the state
-                return this;
             // if we ordered a robot it will now arrive.
             if (inProduction != null) {
                 haveRobots.merge(inProduction.collects, 1, Integer::sum);
                 inProduction = null;
             }
-            // check if DP table of blueprint contains value
-            DiggingSimulationStep dpEntry = blueprint.DP.get(getDPKey());
-            if (dpEntry != null)
+            // if we reached the time limit, we can't get better results.
+            if (currentMinute == MAX_MINUTES) {
+                return this;
+            }
+            // check if DP table of blueprint contains the current state
+            String dpKey = getDPKey();
+            DiggingSimulationStep dpEntry = blueprint.DP.get(dpKey);
+            if (dpEntry != null) {
                 return dpEntry;
+            }
             Set<DiggingSimulationStep> allPossible = new HashSet<>();
-            // buy new things
+            // buy new things if possible
             for (Robot robot : blueprint.store) {
-                // check if buying that one robot and then doing recursion again is better
                 if (shouldBuy(robot) && canBuy(robot)) {
                     DiggingSimulationStep clone = this.clone();
-                    clone.buy(robot);
+                    clone.order(robot);
                     DiggingSimulationStep bestWhenBuyingThis = clone.dp();
                     allPossible.add(bestWhenBuyingThis);
                 }
             }
-            // check if this it is better to not buy
+            // maybe it's better not to buy (I don't know)
             DiggingSimulationStep ifIContinueWithoutBuying = this.clone().dp();
             allPossible.add(ifIContinueWithoutBuying);
-            // return best
+            // get the best simulation.
             DiggingSimulationStep best = null;
             for (DiggingSimulationStep all : allPossible) {
                 if (best == null || best.getQualityLevel() < all.getQualityLevel()) {
                     best = all;
                 }
             }
-            blueprint.DP.put(getDPKey(), best);
+            // storing the best state in the DP
+            blueprint.DP.put(dpKey, best);
+            // returning the best state
             return best;
         }
 
@@ -128,7 +133,7 @@ public class Task19Part1 extends Task {
             return haveRobots.getOrDefault(robot.collects, 0) < max;
         }
 
-        void buy(Robot robot) {
+        void order(Robot robot) {
             for (Cost cost : robot.costs) {
                 haveRocks.merge(cost.currency, -cost.amount, Integer::sum);
             }
@@ -148,6 +153,7 @@ public class Task19Part1 extends Task {
                 clone.currentMinute = currentMinute;
                 clone.haveRobots = new HashMap<>(haveRobots);
                 clone.haveRocks = new HashMap<>(haveRocks);
+                clone.inProduction = inProduction;
                 return clone;
             } catch (CloneNotSupportedException e) {
                 throw new AssertionError();
