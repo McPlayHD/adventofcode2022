@@ -3,10 +3,7 @@ package net.mcplayhd.adventofcode2022.tasks.task19;
 import com.google.gson.Gson;
 import net.mcplayhd.adventofcode2022.tasks.Task;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Task19Part1 extends Task {
     private static final int MAX_MINUTES = 24;
@@ -53,6 +50,7 @@ public class Task19Part1 extends Task {
         int currentMinute;
         Map<Rock, Integer> haveRobots = new HashMap<>();
         Map<Rock, Integer> haveRocks = new HashMap<>();
+        Robot inProduction = null;
 
         public DiggingSimulationStep(Blueprint blueprint) {
             this.blueprint = blueprint;
@@ -81,6 +79,11 @@ public class Task19Part1 extends Task {
             if (currentMinute == MAX_MINUTES)
                 // we reached the time limit so returning the state
                 return this;
+            // if we ordered a robot it will now arrive.
+            if (inProduction != null) {
+                haveRobots.merge(inProduction.collects, 1, Integer::sum);
+                inProduction = null;
+            }
             // check if DP table of blueprint contains value
             DiggingSimulationStep dpEntry = blueprint.DP.get(getDPKey());
             if (dpEntry != null)
@@ -130,7 +133,7 @@ public class Task19Part1 extends Task {
             for (Cost cost : robot.costs) {
                 haveRocks.merge(cost.currency, -cost.amount, Integer::sum);
             }
-            haveRobots.merge(robot.collects, 1, Integer::sum);
+            inProduction = robot;
         }
 
         @Override
