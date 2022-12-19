@@ -33,12 +33,13 @@ public class Task19Part1 extends Task {
                     Rock currency = Rock.valueOf(costSp[2].toUpperCase());
                     robot.costs.add(new Cost(currency, amount));
                 }
-                blueprint.store.put(collects, robot);
+                blueprint.addToStore(robot);
             }
             blueprints.add(blueprint);
         }
         int summed = 0;
         for (Blueprint blueprint : blueprints) {
+            System.out.println(blueprint);
             DiggingSimulationStep start = new DiggingSimulationStep(blueprint);
             start.haveRobots.put(Rock.ORE, 1);
             summed += blueprint.dp(start);
@@ -61,15 +62,6 @@ public class Task19Part1 extends Task {
             return blueprint.id * haveRocks.getOrDefault(Rock.GEODE, 0);
         }
 
-        public long getGoodness() {
-            long goodness = 0;
-            for (Map.Entry<Rock, Integer> robots : haveRobots.entrySet()) {
-                long factor = 1 << (robots.getKey().ordinal() * 7);
-                goodness += factor * robots.getValue();
-            }
-            return goodness;
-        }
-
         String getDPKey() {
             String key = currentMinute + ":";
             for (Rock rock : Rock.values()) {
@@ -86,7 +78,7 @@ public class Task19Part1 extends Task {
                 haveRocks.merge(robot.getKey(), robot.getValue(), Integer::sum);
             }
             currentMinute++;
-            if (currentMinute > MAX_MINUTES)
+            if (currentMinute == MAX_MINUTES)
                 // we reached the time limit so returning the state
                 return this;
             // check if DP table of blueprint contains value
@@ -95,9 +87,9 @@ public class Task19Part1 extends Task {
                 return dpEntry;
             Set<DiggingSimulationStep> allPossible = new HashSet<>();
             // buy new things
-            for (Robot robot : blueprint.store.values()) {
+            for (Robot robot : blueprint.store) {
                 // check if buying that one robot and then doing recursion again is better
-                if (canBuy(robot)) {
+                if (shouldBuy(robot) && canBuy(robot)) {
                     DiggingSimulationStep clone = this.clone();
                     clone.buy(robot);
                     DiggingSimulationStep bestWhenBuyingThis = clone.dp();
@@ -127,6 +119,13 @@ public class Task19Part1 extends Task {
             return true;
         }
 
+        boolean shouldBuy(Robot robot) {
+            if (robot.collects == Rock.GEODE)
+                return true;
+            int max = blueprint.maxCosts.getOrDefault(robot.collects, 0);
+            return haveRobots.getOrDefault(robot.collects, 0) < max;
+        }
+
         void buy(Robot robot) {
             for (Cost cost : robot.costs) {
                 haveRocks.merge(cost.currency, -cost.amount, Integer::sum);
@@ -146,9 +145,8 @@ public class Task19Part1 extends Task {
                 clone.depth = depth + 1;
                 clone.blueprint = blueprint;
                 clone.currentMinute = currentMinute;
-                clone.haveRobots = new HashMap<>();
-                clone.haveRobots.putAll(haveRobots);
-                clone.haveRocks.putAll(haveRocks);
+                clone.haveRobots = new HashMap<>(haveRobots);
+                clone.haveRocks = new HashMap<>(haveRocks);
                 return clone;
             } catch (CloneNotSupportedException e) {
                 throw new AssertionError();
@@ -158,11 +156,19 @@ public class Task19Part1 extends Task {
 
     static class Blueprint {
         int id;
-        Map<Rock, Robot> store = new HashMap<>();
+        Set<Robot> store = new HashSet<>();
         Map<String, DiggingSimulationStep> DP = new HashMap<>();
+        Map<Rock, Integer> maxCosts = new HashMap<>();
 
         public Blueprint(int id) {
             this.id = id;
+        }
+
+        void addToStore(Robot robot) {
+            store.add(robot);
+            for (Cost cost : robot.costs) {
+                maxCosts.merge(cost.currency, cost.amount, Integer::max);
+            }
         }
 
         int dp(DiggingSimulationStep start) {
